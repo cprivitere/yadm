@@ -6,7 +6,7 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
 fi
 
 # If you come from bash you might have to change your $PATH.
-export PATH=$HOME/go/bin:/usr/local/opt/ruby@2.7/bin:$PATH
+export PATH=$HOME/.krew/bin:$HOME/go/bin:/usr/local/opt/ruby@2.7/bin:$PATH
 
 # Path to your oh-my-zsh installation.
 export ZSH="/Users/cprivitere/.oh-my-zsh"
@@ -77,7 +77,7 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(vi-mode git golang iterm2 tmux fzf)
+plugins=(vi-mode git golang tmux fzf kubectl)
 
 source $ZSH/oh-my-zsh.sh
 
