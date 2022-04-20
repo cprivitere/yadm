@@ -113,3 +113,5 @@ source $ZSH/oh-my-zsh.sh
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 
 [ -f ~/.kubectl_aliases ] && source ~/.kubectl_aliases
+
+alias upallthethings="brew update;brew upgrade;omz update;cd ~/.oh-my-zsh/custom/themes/powerlevel10k;git pull;cd ~;omz reload"
