@@ -15,8 +15,7 @@ export ZSH="$HOME/.oh-my-zsh"
 # load a random theme each time oh-my-zsh is loaded, in which case,
 # to know which specific one was loaded, run: echo $RANDOM_THEME
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-#ZSH_THEME="powerlevel10k/powerlevel10k"
-source /opt/homebrew/opt/powerlevel10k/powerlevel10k.zsh-theme
+ZSH_THEME="powerlevel10k/powerlevel10k"
 
 # Set list of themes to pick from when loading at random
 # Setting this variable when ZSH_THEME=random will cause zsh to load
@@ -78,7 +77,7 @@ source /opt/homebrew/opt/powerlevel10k/powerlevel10k.zsh-theme
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(vi-mode git golang tmux fzf kubectl)
+plugins=(brew vi-mode git golang tmux fzf kubectl)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -116,3 +115,5 @@ test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell
 [ -f ~/.kubectl_aliases ] && source ~/.kubectl_aliases
 
 alias upallthethings="brew update;brew upgrade;omz update;cd ~/.oh-my-zsh/custom/themes/powerlevel10k;git pull;cd ~;omz reload"
+alias kns="kubens"
+alias kctx="kubectx"
