@@ -18,5 +18,5 @@ brew install microsoft-teams
 brew install homebrew/cask/onedrive
 brew install pingid
 brew install pritunl
-brew install zoom
-
+brew install equinix/tap/metal-cli
+brew install goreleaser/tap/goreleaser
