@@ -77,7 +77,7 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(vi-mode git golang tmux fzf kubectl)
+plugins=(brew vi-mode git golang tmux fzf kubectl)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -106,12 +106,44 @@ source $ZSH/oh-my-zsh.sh
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
+alias kns=kubens
+alias kctx=kubectx
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
-
+#Kubectl aliases
 [ -f ~/.kubectl_aliases ] && source ~/.kubectl_aliases
 
-alias upallthethings="brew update;brew upgrade;omz update;cd ~/.oh-my-zsh/custom/themes/powerlevel10k;git pull;cd ~;omz reload"
+#Update brew and shell stuff
+alias upallthethings="brew update;brew outdated;brew upgrade;brew cleanup;cd ~/.oh-my-zsh/custom/themes/powerlevel10k;git pull;cd ~;omz update;omz reload"
+
+# Aliases Turn off Global Protect, or turn it on
+alias gprotecton="launchctl load /Library/LaunchAgents/com.paloaltonetworks.gp.pangp*"
+alias gprotectoff="launchctl unload /Library/LaunchAgents/com.paloaltonetworks.gp.pangp*"
+
+#Lots of kubeconfig files!
+# If there's already a kubeconfig file in ~/.kube/config it will import that too and all the contexts
+DEFAULT_KUBECONFIG_FILE="$HOME/.kube/config"
+if test -f "${DEFAULT_KUBECONFIG_FILE}"
+then
+  export KUBECONFIG="$DEFAULT_KUBECONFIG_FILE"
+fi
+# Your additional kubeconfig files should be inside ~/.kube/config-files
+OIFS="$IFS"
+IFS=$'\n'
+for kubeconfigFile in `find "$HOME/.kube/" -type f -name "kubeconfig.*.yml" -o -name "kubeconfig.*.yaml"`
+do
+  export KUBECONFIG="$kubeconfigFile:$KUBECONFIG"
+done
+IFS="$OIFS"
+
+#Completion stuff
+autoload -U +X bashcompinit && bashcompinit
+source <(stern --completion=zsh)
+
+#iTerm integration
+test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+
+#Something to import libraries from homebrew
+export LD_LIBRARY_PATH="$HOMEBREW_PREFIX/lib:$LD_LIBRARY_PATH"

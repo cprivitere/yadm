@@ -1,6 +1,4 @@
 brew install homebrew/cask-fonts/font-meslo-lg-nerd-font
-brew install romkatv/powerlevel10k/powerlevel10k
-echo "source $(brew --prefix)/opt/powerlevel10k/powerlevel10k.zsh-theme" >>~/.zshrc
 brew install discord
 brew install golang
 brew install tmux
@@ -20,5 +18,5 @@ brew install microsoft-teams
 brew install homebrew/cask/onedrive
 brew install pingid
 brew install pritunl
-brew install equinix/metal
-brew install goreleaser/goreleaser
+brew install zoom
+
