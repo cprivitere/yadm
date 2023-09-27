@@ -6,10 +6,10 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
 fi
 
 # If you come from bash you might have to change your $PATH.
-export PATH=$HOME/.krew/bin:$HOME/go/bin:/opt/homebrew/bin:/usr/local/opt/ruby@2.7/bin:$PATH
+export PATH=$HOME/.krew/bin:$HOME/go/bin:$PATH
 
 # Path to your oh-my-zsh installation.
-export ZSH="$HOME/.oh-my-zsh"
+export ZSH=$HOME/.oh-my-zsh
 
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time oh-my-zsh is loaded, in which case,
@@ -77,7 +77,7 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(brew docker vi-mode git golang tmux fzf kubectl)
+plugins=(brew git vi-mode aliases common-aliases docker fzf gh httpie golang terraform tmux vscode zsh-autosuggestions zsh-syntax-highlighting)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -94,6 +94,7 @@ source $ZSH/oh-my-zsh.sh
 # else
 #   export EDITOR='mvim'
 # fi
+export EDITOR='vim'
 
 # Compilation flags
 # export ARCHFLAGS="-arch x86_64"
@@ -109,18 +110,11 @@ source $ZSH/oh-my-zsh.sh
 alias kns=kubens
 alias kctx=kubectx
 
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-
 #Kubectl aliases
 [ -f ~/.kubectl_aliases ] && source ~/.kubectl_aliases
 
 #Update brew and shell stuff
 alias upallthethings="brew update;brew outdated;brew upgrade;brew cleanup;cd ~/.oh-my-zsh/custom/themes/powerlevel10k;git pull;cd ~;omz update;omz reload"
-
-# Aliases Turn off Global Protect, or turn it on
-alias gprotecton="launchctl load /Library/LaunchAgents/com.paloaltonetworks.gp.pangp*"
-alias gprotectoff="launchctl unload /Library/LaunchAgents/com.paloaltonetworks.gp.pangp*"
 
 #Lots of kubeconfig files!
 # If there's already a kubeconfig file in ~/.kube/config it will import that too and all the contexts
@@ -139,11 +133,20 @@ done
 IFS="$OIFS"
 
 #Completion stuff
-autoload -U +X bashcompinit && bashcompinit
-source <(stern --completion=zsh)
+#autoload -U +X bashcompinit && bashcompinit
+#source <(stern --completion=zsh)
 
 #iTerm integration
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+#export COLORTERM="truecolor"
 
 #Something to import libraries from homebrew
-export LD_LIBRARY_PATH="$HOMEBREW_PREFIX/lib:$LD_LIBRARY_PATH"
+#export LD_LIBRARY_PATH="$HOMEBREW_PREFIX/lib:$LD_LIBRARY_PATH"
+
+export HOMEBREW_GITHUB_API_TOKEN=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
+
+# No, Homebrew
+export HOMEBREW_NO_ANALYTICS=1
+
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
