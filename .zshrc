@@ -77,7 +77,7 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(brew git vi-mode aliases common-aliases docker fzf gh httpie golang terraform tmux vscode zsh-autosuggestions zsh-syntax-highlighting)
+plugins=(brew git vi-mode aliases common-aliases docker fzf gh httpie golang terraform tmux vscode zsh-autosuggestions fast-syntax-highlighting zsh-autocomplete)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -143,7 +143,7 @@ test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell
 #Something to import libraries from homebrew
 #export LD_LIBRARY_PATH="$HOMEBREW_PREFIX/lib:$LD_LIBRARY_PATH"
 
-export HOMEBREW_GITHUB_API_TOKEN=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
+export HOMEBREW_GITHUB_API_TOKEN=
 
 # No, Homebrew
 export HOMEBREW_NO_ANALYTICS=1
