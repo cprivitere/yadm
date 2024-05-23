@@ -6,7 +6,7 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
 fi
 
 # If you come from bash you might have to change your $PATH.
-export PATH=$HOME/.krew/bin:$HOME/go/bin:$HOME/.local/bin:$PATH
+export PATH=$HOME/.krew/bin:$HOME/go/bin:$PATH
 
 # Path to your oh-my-zsh installation.
 export ZSH=$HOME/.oh-my-zsh
@@ -77,7 +77,7 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(brew git aliases common-aliases vi-mode docker fzf gh httpie golang terraform tmux vscode zsh-autosuggestions fast-syntax-highlighting)
+plugins=(brew kubectl vi-mode aliases common-aliases docker gh git httpie golang kind terraform tmux fzf vscode zsh-autosuggestions fast-syntax-highlighting)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -154,3 +154,4 @@ export HOMEBREW_NO_ANALYTICS=1
 #Remove some aliases from common-aliases
 unalias rm
 unalias cp
+unalias gup
