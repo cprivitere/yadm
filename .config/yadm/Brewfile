@@ -1,0 +1,70 @@
+tap "aquasecurity/trivy"
+tap "johanhaleby/kubetail"
+tap "homeport/tap"
+tap "kubecolor/tap"
+# Clone of cat(1) with syntax highlighting and Git integration
+brew "bat"
+# Home for the Cluster Management API work, a subproject of sig-cluster-lifecycle
+brew "clusterctl"
+# Making local Kubernetes clusters fun and easy to set up
+brew "ctlptl"
+# Simple, fast and user-friendly alternative to find
+brew "fd"
+# Command-line fuzzy finder written in Go
+brew "fzf"
+# GNU compiler collection
+brew "gcc"
+# GitHub command-line tool
+brew "gh"
+# Distributed revision control system
+brew "git"
+# GNU C Library
+brew "glibc"
+# Kubernetes package manager
+brew "helm"
+# Improved top (interactive process viewer)
+brew "htop"
+# Run local Kubernetes cluster in Docker
+brew "kind"
+# Kubernetes command-line interface
+brew "kubernetes-cli"
+# Package manager for kubectl plugins
+brew "krew"
+# Tool that can switch between kubectl contexts easily and create aliases
+brew "kubectx"
+# Much more powerful alternative to kubectx and kubens
+brew "kubie"
+# Port of Sun's Transport-Independent RPC library to Linux
+brew "libtirpc"
+# Search tool like grep and The Silver Searcher
+brew "ripgrep"
+# Automate your tmux workflow
+brew "smug"
+# Kubernetes component that generates reports on cluster conformance
+brew "sonobuoy"
+# Tail multiple Kubernetes pods & their containers
+brew "stern"
+# Tool to build, change, and version infrastructure
+brew "terraform"
+# Tool to generate documentation from Terraform modules
+brew "terraform-docs"
+# Linter for Terraform files
+brew "tflint"
+# Static analysis security scanner for your terraform code
+brew "trivy"
+# Define your dev environment as code. For microservice apps on Kubernetes
+brew "tilt"
+# Terminal multiplexer
+brew "tmux"
+# Executes a program periodically, showing output fullscreen
+brew "watch"
+# Process YAML, JSON, XML, CSV and properties documents from the CLI
+brew "yq"
+# UNIX shell (command interpreter)
+brew "zsh"
+# Official Equinix Metal CLI
+brew "equinix/tap/metal-cli"
+# δyƒƒ /ˈdʏf/ - A diff tool for YAML files, and sometimes JSON
+brew "homeport/tap/dyff"
+# Tail logs from multiple Kubernetes pods at the same time
+brew "johanhaleby/kubetail/kubetail", args: ["with-short-names"]
