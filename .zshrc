@@ -6,10 +6,10 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
 fi
 
 # If you come from bash you might have to change your $PATH.
-export PATH=$HOME/.krew/bin:$HOME/go/bin:$PATH
+export PATH=$HOME/go/bin:/usr/lib/cargo/bin:/$HOME/.docker/cli-plugins:${HOME}/.krew/bin:$PATH
 
 # Path to your oh-my-zsh installation.
-export ZSH=$HOME/.oh-my-zsh
+export ZSH="$HOME/.oh-my-zsh"
 
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time oh-my-zsh is loaded, in which case,
@@ -39,7 +39,7 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # zstyle ':omz:update' frequency 13
 
 # Uncomment the following line if pasting URLs and other text is messed up.
-# DISABLE_MAGIC_FUNCTIONS="true"
+DISABLE_MAGIC_FUNCTIONS="true"
 
 # Uncomment the following line to disable colors in ls.
 # DISABLE_LS_COLORS="true"
@@ -70,14 +70,14 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # HIST_STAMPS="mm/dd/yyyy"
 
 # Would you like to use another custom folder than $ZSH/custom?
-# ZSH_CUSTOM=/path/to/new-custom-folder
+ZSH_CUSTOM=~/.oh-my-zsh-custom
 
 # Which plugins would you like to load?
 # Standard plugins can be found in $ZSH/plugins/
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(brew kubectl vi-mode aliases common-aliases docker gh git httpie golang kind terraform tmux fzf vscode zsh-autosuggestions fast-syntax-highlighting)
+plugins=(brew kubectl git vi-mode aliases common-aliases docker fzf gh httpie golang terraform tmux vscode zsh-autosuggestions fast-syntax-highlighting)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -86,47 +86,41 @@ source $ZSH/oh-my-zsh.sh
 # export MANPATH="/usr/local/man:$MANPATH"
 
 # You may need to manually set your language environment
-# export LANG=en_US.UTF-8
+export LANG=en_US.UTF-8
 
 # Preferred editor for local and remote sessions
-# if [[ -n $SSH_CONNECTION ]]; then
-#   export EDITOR='vim'
-# else
-#   export EDITOR='mvim'
-# fi
+#if [[ -n $SSH_CONNECTION ]]; then
+#  export EDITOR='vim'
+#else
+#  export EDITOR='mvim'
+#fi
 export EDITOR='vim'
 
 # Compilation flags
 # export ARCHFLAGS="-arch x86_64"
 
-# Set personal aliases, overriding those provided by oh-my-zsh libs,
-# plugins, and themes. Aliases can be placed here, though oh-my-zsh
-# users are encouraged to define aliases within the ZSH_CUSTOM folder.
+# Set personal aliases, overriding those provided by Oh My Zsh libs,
+# plugins, and themes. Aliases can be placed here, though Oh My Zsh
+# users are encouraged to define aliases within a top-level file in
+# the $ZSH_CUSTOM folder, with .zsh extension. Examples:
+# - $ZSH_CUSTOM/aliases.zsh
+# - $ZSH_CUSTOM/macos.zsh
 # For a full list of active aliases, run `alias`.
 #
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
-alias kns=kubens
-alias kctx=kubectx
 
-#Kubectl aliases
-[ -f ~/.kubectl_aliases ] && source ~/.kubectl_aliases
-
-#Update brew and shell stuff
-alias upallthethings="brew update;brew outdated;brew upgrade;brew cleanup;cd ~/.oh-my-zsh/custom/plugins/fast-syntax-highlighting;git pull;cd ~/.oh-my-zsh/custom/plugins/zsh-autocomplete;git pull;cd ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions;git pull;cd ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting;git pull;cd ~/.oh-my-zsh/custom/themes/powerlevel10k;git pull;cd ~;omz update;omz reload"
-
-#Lots of kubeconfig files!
 # If there's already a kubeconfig file in ~/.kube/config it will import that too and all the contexts
 DEFAULT_KUBECONFIG_FILE="$HOME/.kube/config"
 if test -f "${DEFAULT_KUBECONFIG_FILE}"
 then
   export KUBECONFIG="$DEFAULT_KUBECONFIG_FILE"
 fi
-# Your additional kubeconfig files should be inside ~/.kube/config-files
+# Your additional kubeconfig files should be inside ~/.kube/
 OIFS="$IFS"
 IFS=$'\n'
-for kubeconfigFile in `find "$HOME/.kube/" -type f -name "kubeconfig.*.yml" -o -name "kubeconfig.*.yaml"`
+for kubeconfigFile in `find "$HOME/.kube/" -type f -name "kubeconfig.*.yml" -o -name "kubeconfig.*.yaml" -o -name "config.*.yaml"`
 do
   export KUBECONFIG="$kubeconfigFile:$KUBECONFIG"
 done
@@ -135,6 +129,7 @@ IFS="$OIFS"
 #Completion stuff
 #autoload -U +X bashcompinit && bashcompinit
 #source <(stern --completion=zsh)
+#source <(clusterctl completion zsh)
 
 #iTerm integration
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
@@ -142,7 +137,6 @@ test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell
 
 #Something to import libraries from homebrew
 #export LD_LIBRARY_PATH="$HOMEBREW_PREFIX/lib:$LD_LIBRARY_PATH"
-
 export HOMEBREW_GITHUB_API_TOKEN=
 
 # No, Homebrew
@@ -150,8 +144,3 @@ export HOMEBREW_NO_ANALYTICS=1
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-
-#Remove some aliases from common-aliases
-unalias rm
-unalias cp
-unalias gup
