@@ -1,4 +1,4 @@
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 (echo; echo 'eval "$(/opt/homebrew/bin/brew shellenv)"') >> /home/cprivitere/.zshrc
 eval "$(/opt/homebrew/bin/brew shellenv)"
-brew bundle --file /home/cprivitere/.config/yadm/Brewfile
+brew bundle --file /Users/cprivitere/.config/yadm/Brewfile
