@@ -77,7 +77,7 @@ ZSH_CUSTOM=~/.oh-my-zsh-custom
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(iterm2 brew kubectl git vi-mode aliases common-aliases docker fzf gh httpie golang terraform tmux vscode zsh-autosuggestions fast-syntax-highlighting)
+plugins=(brew kubectl git vi-mode aliases common-aliases docker fzf gh httpie golang terraform tmux vscode zsh-autosuggestions fast-syntax-highlighting)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -130,10 +130,6 @@ IFS="$OIFS"
 #autoload -U +X bashcompinit && bashcompinit
 #source <(stern --completion=zsh)
 #source <(clusterctl completion zsh)
-
-#iTerm integration
-#test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
-#export COLORTERM="truecolor"
 
 #Something to import libraries from homebrew
 #export LD_LIBRARY_PATH="$HOMEBREW_PREFIX/lib:$LD_LIBRARY_PATH"
