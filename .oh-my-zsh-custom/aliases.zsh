@@ -6,7 +6,6 @@ alias cat="bat -pp"
 export MANPAGER="env BATMAN_IS_BEING_MANPAGER=yes /bin/bash $HOMEBREW_PREFIX/bin/batman"
 export MANROFFOPT="-c"
 
-
 [ -f ~/.kubectl_aliases ] && source ~/.kubectl_aliases
 
 #Update brew and shell stuff
