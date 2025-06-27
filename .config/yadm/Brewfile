@@ -1,70 +1,93 @@
-tap "aquasecurity/trivy"
-tap "johanhaleby/kubetail"
-tap "homeport/tap"
-tap "kubecolor/tap"
-# Clone of cat(1) with syntax highlighting and Git integration
+tap "nao1215/tap"
+brew "python@3.13"
+brew "ansible"
+brew "atmos"
 brew "bat"
-# Home for the Cluster Management API work, a subproject of sig-cluster-lifecycle
+brew "bat-extras"
 brew "clusterctl"
-# Making local Kubernetes clusters fun and easy to set up
+brew "cpio"
 brew "ctlptl"
-# Simple, fast and user-friendly alternative to find
+brew "docker"
+brew "dyff"
 brew "fd"
-# Command-line fuzzy finder written in Go
 brew "fzf"
-# GNU compiler collection
-brew "gcc"
-# GitHub command-line tool
 brew "gh"
-# Distributed revision control system
 brew "git"
-# GNU C Library
-brew "glibc"
-# Kubernetes package manager
+brew "go"
+brew "grpcurl"
 brew "helm"
-# Improved top (interactive process viewer)
 brew "htop"
-# Run local Kubernetes cluster in Docker
+brew "ipcalc"
+brew "jq"
+brew "k9s"
 brew "kind"
-# Kubernetes command-line interface
 brew "kubernetes-cli"
-# Package manager for kubectl plugins
 brew "krew"
-# Tool that can switch between kubectl contexts easily and create aliases
+brew "kubecolor"
+brew "kubeconform"
 brew "kubectx"
-# Much more powerful alternative to kubectx and kubens
+brew "kubetail"
 brew "kubie"
-# Port of Sun's Transport-Independent RPC library to Linux
-brew "libtirpc"
-# Search tool like grep and The Silver Searcher
+brew "lima"
+brew "pluto"
+brew "pre-commit"
+brew "qemu"
 brew "ripgrep"
-# Automate your tmux workflow
-brew "smug"
-# Kubernetes component that generates reports on cluster conformance
-brew "sonobuoy"
-# Tail multiple Kubernetes pods & their containers
+brew "s3cmd"
 brew "stern"
-# Tool to build, change, and version infrastructure
-brew "terraform"
-# Tool to generate documentation from Terraform modules
-brew "terraform-docs"
-# Linter for Terraform files
-brew "tflint"
-# Static analysis security scanner for your terraform code
-brew "trivy"
-# Define your dev environment as code. For microservice apps on Kubernetes
-brew "tilt"
-# Terminal multiplexer
 brew "tmux"
-# Executes a program periodically, showing output fullscreen
+brew "viddy"
+brew "vim"
+brew "virtualenv"
 brew "watch"
-# Process YAML, JSON, XML, CSV and properties documents from the CLI
+brew "yadm"
+brew "yamlfmt"
+brew "yamllint"
 brew "yq"
-# UNIX shell (command interpreter)
 brew "zsh"
-# Official Equinix Metal CLI
-brew "equinix/tap/metal-cli"
-# δyƒƒ /ˈdʏf/ - A diff tool for YAML files, and sometimes JSON
-brew "homeport/tap/dyff"
-# Tail logs from multiple Kubernetes pods at the same time
-brew "johanhaleby/kubetail/kubetail", args: ["with-short-names"]
+brew "nao1215/tap/gup"
+cask "firefox"
+vscode "bierner.github-markdown-preview"
+vscode "bierner.markdown-checkbox"
+vscode "bierner.markdown-emoji"
+vscode "bierner.markdown-footnotes"
+vscode "bierner.markdown-mermaid"
+vscode "bierner.markdown-preview-github-styles"
+vscode "bierner.markdown-yaml-preamble"
+vscode "davidanson.vscode-markdownlint"
+vscode "dracula-theme.theme-dracula"
+vscode "eamodio.gitlens"
+vscode "esbenp.prettier-vscode"
+vscode "github.copilot"
+vscode "github.copilot-chat"
+vscode "github.vscode-github-actions"
+vscode "github.vscode-pull-request-github"
+vscode "golang.go"
+vscode "hashicorp.terraform"
+vscode "ms-azuretools.vscode-containers"
+vscode "ms-kubernetes-tools.kind-vscode"
+vscode "ms-kubernetes-tools.vscode-kubernetes-tools"
+vscode "ms-python.debugpy"
+vscode "ms-python.python"
+vscode "ms-python.vscode-pylance"
+vscode "ms-vscode-remote.remote-containers"
+vscode "ms-vscode-remote.remote-ssh"
+vscode "ms-vscode-remote.remote-ssh-edit"
+vscode "ms-vscode-remote.remote-wsl"
+vscode "ms-vscode-remote.vscode-remote-extensionpack"
+vscode "ms-vscode.copilot-mermaid-diagram"
+vscode "ms-vscode.makefile-tools"
+vscode "ms-vscode.remote-explorer"
+vscode "ms-vscode.vscode-commander"
+vscode "ms-vscode.vscode-copilot-vision"
+vscode "ms-vscode.vscode-websearchforcopilot"
+vscode "ms-vscode.wordcount"
+vscode "ms-vsliveshare.vsliveshare"
+vscode "nicollasr.vscode-streamdeck"
+vscode "oderwat.indent-rainbow"
+vscode "redhat.vscode-yaml"
+vscode "streetsidesoftware.code-spell-checker"
+vscode "tilt-dev.tiltfile"
+vscode "tomoki1207.pdf"
+vscode "vscode-icons-team.vscode-icons"
+vscode "yzhang.markdown-all-in-one"
