@@ -1,7 +1,7 @@
 alias tf=tofu
 alias kns=kubens
 alias kctx=kubectx
-alias cat='bat --paging=never'
+alias cat='bat --paging=never -p'
 export MANPAGER="env BATMAN_IS_BEING_MANPAGER=yes /bin/bash $HOMEBREW_PREFIX/bin/batman"
 export MANROFFOPT="-c"
 
