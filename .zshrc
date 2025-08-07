@@ -143,3 +143,6 @@ export TELEPORT_USE_LOCAL_SSH_AGENT=false
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# Disable error on unmatched *
+setopt no_nomatch
