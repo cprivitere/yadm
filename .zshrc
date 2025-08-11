@@ -120,7 +120,7 @@ fi
 # Your additional kubeconfig files should be inside ~/.kube/
 OIFS="$IFS"
 IFS=$'\n'
-for kubeconfigFile in `find "$HOME/.kube/" -type f -name "kubeconfig.*.yml" -o -name "kubeconfig.*.yaml" -o -name "config.*.yaml" -o -name "teleport.*.yaml"`
+for kubeconfigFile in `find "$HOME/.kube/" -type f -name "kubeconfig.*.yml" -o -name "kubeconfig.*.yaml" -o -name "config.*.yaml" -o -name "teleport-*.yaml"`
 do
   export KUBECONFIG="$kubeconfigFile:$KUBECONFIG"
 done
