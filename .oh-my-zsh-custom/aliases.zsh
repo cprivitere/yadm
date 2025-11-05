@@ -1,4 +1,4 @@
-alias tf=tofu
+alias tf=terraform
 alias kns=kubens
 alias kctx=kubectx
 alias cat='bat --paging=never -p'

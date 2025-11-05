@@ -146,3 +146,5 @@ export TELEPORT_USE_LOCAL_SSH_AGENT=false
 
 # Disable error on unmatched *
 setopt no_nomatch
+
+[[ "$TERM_PROGRAM" == "vscode" ]] && . "/Applications/Visual Studio Code.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"
