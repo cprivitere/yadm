@@ -77,7 +77,7 @@ ZSH_CUSTOM=~/.oh-my-zsh-custom
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(brew kubectl git vi-mode aliases common-aliases docker fzf gh httpie golang terraform tmux vscode zsh-autosuggestions fast-syntax-highlighting mise)
+plugins=(brew git vi-mode aliases common-aliases docker fzf gh golang terraform tmux vscode zsh-autosuggestions fast-syntax-highlighting mise eza uv helm kubectl)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -120,7 +120,7 @@ fi
 # Your additional kubeconfig files should be inside ~/.kube/
 OIFS="$IFS"
 IFS=$'\n'
-for kubeconfigFile in `find "$HOME/.kube/" -type f -name "kubeconfig.*.yml" -o -name "kubeconfig.*.yaml" -o -name "config.*.yaml" -o -name "teleport-*.yaml"`
+for kubeconfigFile in `find "$HOME/.kube/" -type f -name "kubeconfig.*.yml" -o -name "kubeconfig.*.yaml" -o -name "config.*.yaml" -o -name "teleport-*.yaml" -o -name "oidc-*.yaml"` 
 do
   export KUBECONFIG="$kubeconfigFile:$KUBECONFIG"
 done
