@@ -79,8 +79,8 @@
 [core]
 	editor = code --wait
 [commit]
-    verbose = 2
-    template = ~/.config/git/commit-template
+        verbose = 2
+        template = ~/.config/git/commit-template
 [init]
 	defaultbranch = main
 [filter "lfs"]
