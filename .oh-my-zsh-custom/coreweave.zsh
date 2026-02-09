@@ -567,7 +567,7 @@ node-info() {
 
   # Get node metadata
   local metadata_result=$(_get_node_metadata_from_yanl "$node_name")
-  IFS='|' read -r deviceslot serial <<< "$metadata_result"
+  IFS='|' read -r cluster deviceslot serial <<< "$metadata_result"
 
   cat << EOF
 gmac: $node_name
