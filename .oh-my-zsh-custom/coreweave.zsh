@@ -12,8 +12,7 @@ VPN_DNS_DOMAINS=(
 )
 
 # Teleport roles
-TELEPORT_ROLES_CLUSTER="cpx-cluster-super-admin-resource-access,prime-cluster-super-admin-resource-access"
-TELEPORT_ROLE_SSH_NODE="cpx-cluster-super-admin-resource-access,prime-cluster-super-admin-resource-access"
+TELEPORT_ROLES_CLUSTER="cpx-cluster-super-admin-resource-access"
 
 # SOCKS proxy port for chrome_proxy
 SOCKS_PROXY_PORT=9999
@@ -44,7 +43,7 @@ _get_teleport_cluster() {
 # Get currently selected Teleport cluster
 # Returns: cluster name
 _get_current_teleport_cluster() {
-  tsh clusters -f json | yq '.[] | select(.selected == true) | .cluster_name'
+  tsh clusters -f json 2>/dev/null | yq '.[] | select(.selected == true) | .cluster_name'
 }
 
 # Save current kubectl context and extract region/cluster
@@ -80,9 +79,9 @@ _get_node_metadata_from_yanl() {
 # ============================================================================
 
 export TELEPORT_PROXY_NA="teleport.na.int.coreweave.com:443"
-export GOPRIVATE='github.com/coreweave/*,bsr.core-services.ingress.coreweave.com/gen/go'
+export GOPRIVATE='github.com/coreweave/*,bsr.core-services.ingress.coreweave.com/*'
 
-source <(cwctl completion zsh)
+
 
 alias intd="infractl nt delete --automerge"
 alias inta="infractl nt add --automerge"
@@ -327,8 +326,10 @@ tp-request-namespace() {
     return 1
   fi
 
+  export TELEPORT_CLUSTER=$(_get_current_teleport_cluster)
+
   local QUERY="labels[\"cks.coreweave.com/cluster\"] == \"$KUBE_CLUSTER\" || labels[\"cluster\"] == \"$KUBE_CLUSTER\""
-  
+
   # Build resources for all namespaces
   local ALL_RESOURCES=""
   for NAMESPACE in "${NAMESPACES[@]}"; do
@@ -347,7 +348,8 @@ tp-request-cluster() {
     return 1
   fi
 
-  #local TELEPORT_CLUSTER=$(_get_current_teleport_cluster)
+  export TELEPORT_CLUSTER=$(_get_current_teleport_cluster)
+
   local KUBE_CLUSTER=$1
   shift
 
@@ -365,13 +367,14 @@ tp-request-cluster-and-friends() {
     return 1
   fi
 
-  #local TELEPORT_CLUSTER=$(_get_current_teleport_cluster)
+  export TELEPORT_CLUSTER=$(_get_current_teleport_cluster)
+
   local KUBE_CLUSTER=$1
   shift
 
   NODES=$(tp-search-nodes-in-cluster $KUBE_CLUSTER)
   CLUSTER=$(tp-search-cluster "$1" | grep -o '/teleport[^ ]*/kube_cluster/[^ ]*' | sed -E 's|^/||; s|/kube_cluster/.*||' | head -n1)
-  local RESOURCES=$(echo $NODES $CLUSTERS | tr '\n' ' ')
+  local RESOURCES=$(echo $NODES $CLUSTER | tr '\n' ' ')
 
   eval "tsh request create ${RESOURCES} --roles $TELEPORT_ROLES_CLUSTER --reason \"$@\""
 }
@@ -410,7 +413,7 @@ tp-request-ssh() {
   fi
 
   echo "Creating request for $found_nodes nodes with reason: '$reason'"
-  tsh request create "${args[@]}" --roles "$TELEPORT_ROLE_SSH_NODE" --reason "$reason"  
+  tsh request create "${args[@]}" --roles "$TELEPORT_ROLES_CLUSTER" --reason "$reason"  
 }
 
 # ============================================================================
