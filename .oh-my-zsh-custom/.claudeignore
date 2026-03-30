@@ -1,5 +1,5 @@
 # Claude Code ignore file
 # Files and directories listed here will be excluded from Claude's context
 
-secrets.zsh
-secrets.zsh.zwc
+secrets.*
+*.zwc
