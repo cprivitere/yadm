@@ -162,5 +162,7 @@ setopt no_nomatch
 # Change zsh autosuggestions behavior to only trigger on manual rebind (e.g. Ctrl+Space) ??
 ZSH_AUTOSUGGEST_MANUAL_REBIND=1
 
-# CoreWeave Netskope SSL fix for Claude Code MCP servers
-export NODE_EXTRA_CA_CERTS="/Library/Application Support/Netskope/STAgent/data/nscacert.pem"
+
+# CoreWeave Netskope SSL fix — combined CA bundle for Node.js and Go tools (re-run setup.sh to refresh)
+export NODE_EXTRA_CA_CERTS="/Users/cprivitere/.certs/ca-bundle.pem"
+export SSL_CERT_FILE="/Users/cprivitere/.certs/ca-bundle.pem"

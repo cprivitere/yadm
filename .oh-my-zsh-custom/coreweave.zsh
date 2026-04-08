@@ -20,7 +20,6 @@ SOCKS_PROXY_PORT=9999
 # Proxy bypass list for chrome_proxy
 PROXY_NO_PROXY="localhost,127.0.0.0/8,::1,www.*,google.*,docs.*,graphana.*,awx.*,slack*,login.*,git*,teleport.*,vault.,okta.,chat.*,mail.*,notion.*,coreweave.*,*.com,*.org,*.net,*.so,10.37.0.0/16,10.39.0.0/16,10.61.0.0/16,10.65.0.0/16,10.31.0.0/16,10.35.0.0/16"
 
-
 # ============================================================================
 # HELPER FUNCTIONS (Internal - prefixed with _)
 # ============================================================================
@@ -70,7 +69,8 @@ _get_node_metadata_from_yanl() {
   cluster=$(yanl -o cluster "${node_name}")
   deviceslot=$(yanl -o deviceslot "${node_name}")
   serial=$(yanl -o node_serial "${node_name}")
-  echo "${cluster}|${deviceslot}|${serial}"
+  region=$(yanl -o region "${node_name}")
+  echo "${cluster}|${deviceslot}|${serial}|${region}"
 }
 
 
@@ -81,10 +81,8 @@ _get_node_metadata_from_yanl() {
 export TELEPORT_PROXY_NA="teleport.na.int.coreweave.com:443"
 export GOPRIVATE='github.com/coreweave/*,bsr.core-services.ingress.coreweave.com/*'
 
-
-
-alias intd="infractl nt delete --automerge"
-alias inta="infractl nt add --automerge"
+# Yanl metrics datasource
+export YANL_DATA_SOURCE_URIS="http://vmui.us-east.int.coreweave.com/select/0/prometheus,http://vmui.eu-south.int.coreweave.com/select/0/prometheus,http://vmui.us-west.int.coreweave.com/select/0/prometheus,http://vmui.us-lab.int.coreweave.com/select/0/prometheus"
 
 # ============================================================================
 # KUBERNETES NODE MANAGEMENT
@@ -257,15 +255,6 @@ tp-search-cluster() {
   tsh request search --kind kube_cluster --search "$1"
 }
 
-# Request access to ORD1 cluster (specific use case)
-tp-ord1() {
-  if [ -z "$1" ]; then
-    echo "Usage: tp-ord1 <reason>"
-    return 1
-  fi
-
-  eval "tsh request create --resource /teleport.ord1.int.coreweave.com/namespace/ord1-tenant/dev-internal-cluster --roles k8s-infrastructure-dev-cluster-super-admin-elevated-access --reason \"$@\""
-}
 
 # Request access to kubevirt cluster (specific use case)
 tp-kubevirt() {
@@ -536,27 +525,12 @@ chrome_proxy() {
 # ============================================================================
 
 # Generate DPU cable reseat request message
-dpu-request() {
-  if (( $# < 1 )); then
-    echo "Usage: dpu-request <nodename> [dpu_port]"
-    return 1
-  fi
-
+# Helper: Get node info in pipe-delimited format
+_get_node_info() {
   local node_name=$1
-  local dpu_port=${2:-}
-
-  # Get node metadata
   local metadata_result=$(_get_node_metadata_from_yanl "$node_name")
-  IFS='|' read -r cluster deviceslot serial <<< "$metadata_result"
-
-  cat << EOF
-Hi there, I need a DCT to do a clean and reseat on the following node's DPU cable
-gmac: $node_name
-cluster: $cluster
-deviceslot: $deviceslot
-serialnum: $serial
-DPU port that needs cleaning: $dpu_port
-EOF
+  IFS='|' read -r cluster deviceslot serial region <<< "$metadata_result"
+  echo "$node_name|$cluster|$deviceslot|$serial|$region"
 }
 
 # Display node information
@@ -565,18 +539,48 @@ node-info() {
     echo "Usage: node-info <nodename>"
     return 1
   fi
-
   local node_name=$1
-
-  # Get node metadata
-  local metadata_result=$(_get_node_metadata_from_yanl "$node_name")
-  IFS='|' read -r cluster deviceslot serial <<< "$metadata_result"
-
+  IFS='|' read -r gmac cluster deviceslot serial region <<< "$(_get_node_info "$node_name")"
   cat << EOF
-gmac: $node_name
+gmac: $gmac
 cluster: $cluster
 deviceslot: $deviceslot
 serialnum: $serial
+region: $region
+EOF
+}
+
+# Generate DPU cable reseat request message
+dpu-clean() {
+  if (( $# < 2 )); then
+    echo "Usage: dpu-clean <nodename> <dpu_port>"
+    return 1
+  fi
+  local node_name=$1
+  local dpu_port=${2:-}
+  IFS='|' read -r gmac cluster deviceslot serial region <<< "$(_get_node_info "$node_name")"
+  cat << EOF
+cwctl ticket dct-action device "$gmac" \
+  -m "Please clean and reseat both the cable and optic in $dpu_port on node: $gmac, deviceslot: $deviceslot, serial: $serial, cluster: $cluster. Please take care with the other port as this node is currently in production. Thanks." \
+  -r "$region"
+EOF
+}
+
+# Create DCT ticket for NVMe drive replacement
+nvme-replace() {
+  if (( $# != 3 )); then
+    echo "Usage: nvme-replace <nodename> <drive> <driveserial>"
+    return 1
+  fi
+  local node_name=$1
+  local drive=$2
+  local driveserial=$3
+  local region=$4
+  IFS='|' read -r gmac cluster deviceslot serial region <<< "$(_get_node_info "$node_name")"
+  cat << EOF  
+cwctl ticket dct-action device "$gmac" \
+  -m "Failed NVMe ($drive) with serial $driveserial on node: $gmac, deviceslot: $deviceslot, serial: $serial. Node drained; please replace drive." \
+  -r "$region"
 EOF
 }
 
