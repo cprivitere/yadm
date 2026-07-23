@@ -77,7 +77,7 @@ ZSH_CUSTOM=~/.oh-my-zsh-custom
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(brew git vi-mode aliases common-aliases docker fzf gh golang terraform tmux vscode zsh-autosuggestions fast-syntax-highlighting mise eza uv helm kubectl)
+plugins=(brew mise git vi-mode aliases common-aliases docker fzf gh golang terraform vscode fzf-tab zsh-autosuggestions fast-syntax-highlighting zsh-history-substring-search eza uv helm kubectl)
 
 # Add zsh-completions to fpath BEFORE sourcing oh-my-zsh (to avoid double compinit)
 fpath+=${ZSH_CUSTOM:-${ZSH:-~/.oh-my-zsh}/custom}/completions
@@ -117,24 +117,23 @@ export EDITOR='vim'
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
 # If there's already a kubeconfig file in ~/.kube/config it will import that too and all the contexts
-DEFAULT_KUBECONFIG_FILE="$HOME/.kube/config"
-if test -f "${DEFAULT_KUBECONFIG_FILE}"
-then
-  export KUBECONFIG="$DEFAULT_KUBECONFIG_FILE"
-fi
+#DEFAULT_KUBECONFIG_FILE="$HOME/.kube/config"
+#if test -f "${DEFAULT_KUBECONFIG_FILE}"
+#then
+#  export KUBECONFIG="$DEFAULT_KUBECONFIG_FILE"
+#fi
 # Your additional kubeconfig files should be inside ~/.kube/
 # Use zsh globbing instead of find - much faster, no external process
-for kubeconfigFile in ~/.kube/(dev-*.yaml|kubeconfig.*.yml|kubeconfig.*.yaml|config.*.yaml|teleport-*.yaml|oidc-*.yaml)(N); do
-  export KUBECONFIG="$kubeconfigFile:$KUBECONFIG"
-done
+#for kubeconfigFile in ~/.kube/(dev-*.yaml|kubeconfig.*.yml|kubeconfig.*.yaml|config.*.yaml|teleport-*.yaml|oidc-*.yaml)(N); do
+#  export KUBECONFIG="$kubeconfigFile:$KUBECONFIG"
+#done
 
 # Completion stuff
 # Uncomment if you need bash completions for tools that don't have zsh completions
 # autoload -U +X bashcompinit && bashcompinit
 
 # Tool-specific completions (uncomment as needed)
-# source <(stern --completion=zsh)
-# source <(clusterctl completion zsh)
+compdef _kubectl kubecolor
 
 # Enhanced completion styling
 zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"  # Use LS_COLORS for file completions
@@ -162,7 +161,26 @@ setopt no_nomatch
 # Change zsh autosuggestions behavior to only trigger on manual rebind (e.g. Ctrl+Space) ??
 ZSH_AUTOSUGGEST_MANUAL_REBIND=1
 
-
-# CoreWeave Netskope SSL fix — combined CA bundle for Node.js and Go tools (re-run setup.sh to refresh)
+# CoreWeave Netskope SSL fix — combined CA bundle for Node.js, Go and Python tools (re-run setup.sh to refresh)
 export NODE_EXTRA_CA_CERTS="/Users/cprivitere/.certs/ca-bundle.pem"
 export SSL_CERT_FILE="/Users/cprivitere/.certs/ca-bundle.pem"
+export REQUESTS_CA_BUNDLE="/Users/cprivitere/.certs/ca-bundle.pem"
+
+# Source Coreweave teleport helpers
+[[ -f $HOME/coreweave/cw-fleet-tools/scripts/teleport/helpers/tls ]] && source $HOME/coreweave/cw-fleet-tools/scripts/teleport/helpers/tls
+[[ -f $HOME/coreweave/cw-fleet-tools/scripts/teleport/helpers/tlk ]] && source $HOME/coreweave/cw-fleet-tools/scripts/teleport/helpers/tlk
+
+
+# Added by LM Studio CLI (lms)
+export PATH="$PATH:/Users/cprivitere/.lmstudio/bin"
+# End of LM Studio CLI section
+
+
+# pnpm
+export PNPM_HOME="/Users/cprivitere/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME/bin:"*) ;;
+  *) export PATH="$PNPM_HOME/bin:$PATH" ;;
+esac
+# pnpm end
+alias cavemem="node /Users/cprivitere/coreweave/cavemem/apps/cli/dist/index.js"

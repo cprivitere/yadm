@@ -51,8 +51,10 @@ _for_each_plugin() {
   $callback "plugins/fast-syntax-highlighting" "https://github.com/zdharma-continuum/fast-syntax-highlighting.git" "fast-syntax-highlighting.plugin.zsh" "$mode"
   $callback "plugins/zsh-autosuggestions" "https://github.com/zsh-users/zsh-autosuggestions.git" "zsh-autosuggestions.zsh" "$mode"
   $callback "plugins/zsh-completions" "https://github.com/zsh-users/zsh-completions.git" "zsh-completions.plugin.zsh" "$mode"
+  $callback "plugins/zsh-history-substring-search" "https://github.com/zsh-users/zsh-history-substring-search.git" "zsh-history-substring-search.plugin.zsh" "$mode"
+  $callback "plugins/fzf-tab" "https://github.com/Aloxaf/fzf-tab.git" "fzf-tab.zsh" "$mode"
   $callback "themes/powerlevel10k" "https://github.com/romkatv/powerlevel10k.git" "" "$mode"
-}
+} 
 
 _compile_plugins() {
   local clean="${1:-false}"
@@ -89,7 +91,7 @@ upallthethings() {
     echo "=== Updating Homebrew ==="
     brew update
     brew outdated
-    brew upgrade
+    brew upgrade -y
     brew cleanup
 
     echo -e "\n=== Cleaning old compiled files ==="
@@ -97,27 +99,42 @@ upallthethings() {
     fd -d 2 -i -I --glob -H \*.zwc ${HOME:-/tmp} -x rm
 
     echo -e "\n=== Updating plugins ==="
+    _for_each_plugin setup
     _for_each_plugin update
 
-    echo -e "\n=== Updating oh-my-zsh ==="
-    cd ~ && omz update
-
     echo -e "\n=== Updating mise ==="
+    cd ~ && mise self-update -y
     cd ~ && mise up
 
     echo -e "\n=== Updating Go binaries with gup ==="
     cd ~ && gup update
 
-    echo -e "\n=== Updating cw ==="
-    cd ~ && cw update
+    echo -e "\n=== Updating Mission Control ==="
+    cd ~ && mission-control update -y
 
+    echo -e "\n=== Updating cw ==="
+    cd ~ && cw update -y
+ 
     echo -e "\n=== Updating claude ==="
     cd ~ && claude update
+
+    echo -e "\n=== Updating pogo ==="
+    echo "Pulling latest changes for pogo..."
+    if [[ -d "/Users/cprivitere/coreweave/metal-tools/.git" ]]; then
+      git -C "/Users/cprivitere/coreweave/metal-tools/" pull --quiet --rebase || echo "Warning: git update failed for pogo" >&2
+      uv tool upgrade pogo || echo "Warning: uv update failed for pogo" >&2
+    else
+      echo "Warning: pogo directory is not a git repository, skipping update" >&2
+    fi
 
     echo -e "\n=== Recompiling everything ==="
     compilecustom
 
+    echo -e "\n=== Updating oh-my-zsh ==="
+    cd ~ && omz update
+
     echo -e "\n✓ All updates complete! Reload your shell with: omz reload"
+
   )
 }
 

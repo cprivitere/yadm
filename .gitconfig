@@ -57,12 +57,14 @@
 #
 #    fp = push --force-with-lease
 
+[credential]
+	helper =
 [credential "https://github.com"]
 	helper = 
-	helper = !/opt/homebrew/bin/gh auth git-credential
+	helper = !/Users/cprivitere/.local/share/mise/installs/gh/latest/gh_2.96.0_macOS_arm64/bin/gh auth git-credential
 [credential "https://gist.github.com"]
 	helper = 
-	helper = !/opt/homebrew/bin/gh auth git-credential
+	helper = !/Users/cprivitere/.local/share/mise/installs/gh/latest/gh_2.96.0_macOS_arm64/bin/gh auth git-credential
 [user]
 	name = Chris Privitere
 	email = 23177737+cprivitere@users.noreply.github.com

@@ -13,6 +13,7 @@ VPN_DNS_DOMAINS=(
 
 # Teleport roles
 TELEPORT_ROLES_CLUSTER="cpx-cluster-super-admin-resource-access"
+TELEPORT_ROLES_LAB="us-lab-01c-super-admin-elevated-access"
 
 # SOCKS proxy port for chrome_proxy
 SOCKS_PROXY_PORT=9999
@@ -43,6 +44,70 @@ _get_teleport_cluster() {
 # Returns: cluster name
 _get_current_teleport_cluster() {
   tsh clusters -f json 2>/dev/null | yq '.[] | select(.selected == true) | .cluster_name'
+}
+
+# ----------------------------------------------------------------------------
+# Teleport access-request helpers (shared by tp-request-* / tp-kubevirt*)
+# ----------------------------------------------------------------------------
+
+# Pull a dry-run/echo flag (-n|--dry-run|--echo) out of an arg list.
+# Sets globals: _TP_DRY_RUN (0|1), _TP_ARGS (remaining args, spaces preserved).
+# Usage: _tp_filter_dryrun "$@"; set -- "${_TP_ARGS[@]}"; local dry_run=$_TP_DRY_RUN
+_tp_filter_dryrun() {
+  _TP_DRY_RUN=0
+  _TP_ARGS=()
+  local a
+  for a in "$@"; do
+    case "$a" in
+      -n|--dry-run|--echo) _TP_DRY_RUN=1 ;;
+      *) _TP_ARGS+=("$a") ;;
+    esac
+  done
+}
+
+# Pick the Teleport role for a cluster: lab clusters (*-lab-*) get the lab role,
+# everything else gets the standard cpx cluster role.
+# Usage: _tp_roles_for_cluster <kube-cluster-name>
+_tp_roles_for_cluster() {
+  case "$1" in
+    *-lab-*) echo "$TELEPORT_ROLES_LAB" ;;
+    *)       echo "$TELEPORT_ROLES_CLUSTER" ;;
+  esac
+}
+
+# Resolve a CKS cluster name to its Teleport kube_cluster_name via label query.
+# Usage: _tp_resolve_kube_cluster <kube-cluster-name> [teleport-cluster]
+# Prints the single match; errors (stderr, return 1) on zero or multiple matches.
+_tp_resolve_kube_cluster() {
+  local kube_cluster="$1"
+  local teleport_cluster="${2:-$(_get_current_teleport_cluster)}"
+  local query="labels[\"cks.coreweave.com/cluster\"] == \"$kube_cluster\" || labels[\"cluster\"] == \"$kube_cluster\""
+  local matches
+  matches=$(TELEPORT_CLUSTER=$teleport_cluster tsh kube ls --query "$query" -f yaml | yq '.[] | .kube_cluster_name')
+
+  if [ -z "$matches" ]; then
+    echo "Error: no Teleport kube cluster matched \"$kube_cluster\"" >&2
+    return 1
+  fi
+  if [ "$(printf '%s\n' "$matches" | grep -c .)" -gt 1 ]; then
+    echo "Error: query matched multiple clusters, refine \"$kube_cluster\":" >&2
+    echo "$matches" >&2
+    return 1
+  fi
+  echo "$matches"
+}
+
+# Create a Teleport access request, or echo the command when dry-run is set.
+# Usage: _tp_request_create <dry_run:0|1> <roles> <reason> <resource-arg...>
+_tp_request_create() {
+  local dry_run="$1" roles="$2" reason="$3"
+  shift 3
+  local cmd=(tsh request create "$@" --roles "$roles" --reason "$reason")
+  if [ "$dry_run" = "1" ]; then
+    print -r -- "${(q)cmd[@]}"
+    return 0
+  fi
+  "${cmd[@]}"
 }
 
 # Save current kubectl context and extract region/cluster
@@ -84,6 +149,53 @@ export GOPRIVATE='github.com/coreweave/*,bsr.core-services.ingress.coreweave.com
 # Yanl metrics datasource
 export YANL_DATA_SOURCE_URIS="http://vmui.us-east.int.coreweave.com/select/0/prometheus,http://vmui.eu-south.int.coreweave.com/select/0/prometheus,http://vmui.us-west.int.coreweave.com/select/0/prometheus,http://vmui.us-lab.int.coreweave.com/select/0/prometheus"
 
+# VPN STUFF
+
+vpn-start() {
+  local VPN_CONFIG_FILE=${1:-~/.config/openvpn3/dev-cluster.ovpn}
+  [[ ! -e "$VPN_CONFIG_FILE" ]] &&
+    echo "VPN Config file not found: $VPN_CONFIG_FILE" && return 1
+  openvpn3 session-start --config "$VPN_CONFIG_FILE"
+}
+
+vpn-stop() {
+  for session_path in $(openvpn3 sessions-list | awk "{ if(\$0 ~ /Path:/){print \$2} else if(\$0 ~ /No sessions available/){print \"none\"} }"); do
+    if [[ "${session_path}" =~ ^none$ ]]; then
+      echo "No sessions available";
+    else echo openvpn3 session-manage --disconnect --session-path $session_path; openvpn3 session-manage --disconnect --session-path "${session_path}"
+    fi
+  done
+  openvpn3 session-manage --cleanup; unset session_path
+}
+
+vpn-list() {
+  openvpn3 sessions-list
+}
+
+vpn-reset() {
+  local session_path="$(openvpn3 sessions-list | awk "{ if(\$0 ~ /Path:/){print \$2} else if(\$0 ~ /No sessions available/){print \"none\"} }")"
+  if [[ "${session_path}" -eq "none" ]]; then
+    vpn-start
+  elif [[ $(echo "${session_path}" | wc -l) -eq 1 ]]; then
+    openvpn3 session-manage --restart --path "${session_path}"
+  else
+    vpn-stop && vpn-start
+  fi
+}
+
+vpn-set-ip() {
+    local IP=$1
+    local VPN_CONFIG_FILE=${2:-~/.config/openvpn3/dev-cluster.ovpn}
+    [[ -z "$IP" ]] && echo No IP given && return 1
+    [[ ! -e "$VPN_CONFIG_FILE" ]] &&
+      echo "VPN Config file not found: $VPN_CONFIG_FILE" && return 1
+    sed -E -i".bak" -e "s/^remote +([^ ]+)/remote $IP/" $VPN_CONFIG_FILE
+    grep "^remote $IP" $VPN_CONFIG_FILE || {
+        echo "IP Update Failed"
+        return 1
+    }
+}
+
 # ============================================================================
 # KUBERNETES NODE MANAGEMENT
 # ============================================================================
@@ -112,6 +224,9 @@ local draining="DRAINING:metadata.annotations['draino\.coreweave\.cloud\/drainin
 alias nodes="k get nodes -o=custom-columns=\"${name},${node_ip},${ready},${cordon},${taint},${draining},${ncore},${payload},${k8sversion},${owner},${state},${reserved},${cluster},${rack},${ru}\""
 alias nodes2="k get nodes -o=custom-columns=\"${name},${node_ip},${ready},${cordon},${taint},${owner},${state},${reserved},${cluster}\""
 
+# Infractl aliases
+alias ic="infractl"
+alias icduty="infractl pagerduty tui --user-email cprivitere@coreweave.com"
 
 # kubectl get nodes with multiple label columns safely
 kgnl() {
@@ -245,133 +360,187 @@ tp-search-nodes-in-cluster() {
 
 
 
-# Search for clusters in Teleport
+# Search for clusters in Teleport (label query, matches tp-request-* style)
 tp-search-cluster() {
   if [ -z "$1" ]; then
     echo "Usage: tp-search-cluster <cluster-name>"
     return 1
   fi
 
-  tsh request search --kind kube_cluster --search "$1"
+  local query="labels[\"cks.coreweave.com/cluster\"] == \"$1\" || labels[\"cluster\"] == \"$1\""
+  TELEPORT_CLUSTER=$(_get_current_teleport_cluster) tsh kube ls --query "$query"
 }
-
 
 # Request access to kubevirt cluster (specific use case)
 tp-kubevirt() {
+  _tp_filter_dryrun "$@"
+  set -- "${_TP_ARGS[@]}"
+  local dry_run=$_TP_DRY_RUN
+
   if [ -z "$1" ]; then
-    echo "Usage: tp-kubevirt <reason>"
+    echo "Usage: tp-kubevirt [-n|--echo] <reason>"
     return 1
   fi
 
   local KUBE_CLUSTER="us-lab-01c-kubevirt"
 
-  # Get node *resource IDs*, ideally like: /teleport/node/<uuid>
-  local NODES
-  NODES="$(tp-search-nodes-in-cluster "${KUBE_CLUSTER}")"
-
-  # Build a string of repeated --resource <id> flags
-  local RESOURCE_FLAGS=""
-  while IFS= read -r node; do
-    [ -n "$node" ] || continue
-    RESOURCE_FLAGS="$RESOURCE_FLAGS --resource /teleport/node/$node"
-  done <<EOF
-$NODES
-EOF
-
-  # Add the kube cluster resource itself
-  local CLUSTER="/teleport/kube_cluster/${KUBE_CLUSTER}"
-  RESOURCE_FLAGS="$RESOURCE_FLAGS --resource $CLUSTER"
-
-  eval "tsh request create${RESOURCE_FLAGS} --roles us-lab-01c-super-admin-elevated-access --reason \"$*\""
-
+  _tp_request_create "$dry_run" "$(_tp_roles_for_cluster "$KUBE_CLUSTER")" "$*" \
+    --resource "/teleport/kube_cluster/${KUBE_CLUSTER}"
 }
 
-tp-request-namespace() {
-  if [ -z "$1" ] || [ -z "$2" ]; then
-    echo "Usage: tp-request-namespace <kube-cluster-name> <namespace1> [namespace2 ...] -- <reason>"
-    echo "Example: tp-request-namespace us-east-03-internal calico-system kube-system -- \"Debugging pods\""
+# Request access to kubevirt cluster and its nodes (specific use case)
+tp-kubevirt-all() {
+  _tp_filter_dryrun "$@"
+  set -- "${_TP_ARGS[@]}"
+  local dry_run=$_TP_DRY_RUN
+
+  if [ -z "$1" ]; then
+    echo "Usage: tp-kubevirt-all [-n|--echo] <reason>"
     return 1
   fi
 
-  local KUBE_CLUSTER=$1
-  shift
+  local KUBE_CLUSTER="us-lab-01c-kubevirt"
 
-  # Collect namespaces until we hit "--" or run out of args
+  local resources=(--resource "/teleport/kube_cluster/${KUBE_CLUSTER}")
+  local node
+  while IFS= read -r node; do
+    [ -n "$node" ] || continue
+    resources+=(--resource "/teleport/node/$node")
+  done < <(tp-search-nodes-in-cluster "${KUBE_CLUSTER}")
+
+  _tp_request_create "$dry_run" "$(_tp_roles_for_cluster "$KUBE_CLUSTER")" "$*" "${resources[@]}"
+}
+
+tp-request-namespace() {
+  local USAGE="Usage: tp-request-namespace [-n|--echo] <cluster1> [cluster2 ...] -- <namespace1> [namespace2 ...] -- <reason>"
+  local EXAMPLE="Example: tp-request-namespace us-east-03-internal us-east-04-internal -- calico-system kube-system -- \"Debugging pods\""
+
+  _tp_filter_dryrun "$@"
+  set -- "${_TP_ARGS[@]}"
+  local dry_run=$_TP_DRY_RUN
+
+  if [ -z "$1" ]; then
+    echo "$USAGE"
+    echo "$EXAMPLE"
+    return 1
+  fi
+
+  local TELEPORT_CLUSTER
+  TELEPORT_CLUSTER=$(_get_current_teleport_cluster)
+
+  local KUBE_CLUSTERS=()
+  while [ $# -gt 0 ] && [ "$1" != "--" ]; do
+    KUBE_CLUSTERS+=("$1")
+    shift
+  done
+  [ "$1" = "--" ] && shift
+
   local NAMESPACES=()
   while [ $# -gt 0 ] && [ "$1" != "--" ]; do
     NAMESPACES+=("$1")
     shift
   done
+  [ "$1" = "--" ] && shift
 
-  # Skip the "--" delimiter if present
-  if [ "$1" = "--" ]; then
-    shift
+  local REASON="$*"
+
+  if [ ${#KUBE_CLUSTERS[@]} -eq 0 ]; then
+    echo "Error: at least one cluster is required"
+    echo "$USAGE"
+    return 1
   fi
-
-  # Everything remaining is the reason
-  if [ -z "$*" ]; then
-    echo "Error: Reason is required"
-    echo "Usage: tp-request-namespace <kube-cluster-name> <namespace1> [namespace2 ...] -- <reason>"
+  if [ ${#NAMESPACES[@]} -eq 0 ]; then
+    echo "Error: at least one namespace is required (separate clusters and namespaces with '--')"
+    echo "$USAGE"
+    return 1
+  fi
+  if [ -z "$REASON" ]; then
+    echo "Error: Reason is required (did you forget the second '--'?)"
+    echo "$USAGE"
     return 1
   fi
 
-  export TELEPORT_CLUSTER=$(_get_current_teleport_cluster)
-
-  local QUERY="labels[\"cks.coreweave.com/cluster\"] == \"$KUBE_CLUSTER\" || labels[\"cluster\"] == \"$KUBE_CLUSTER\""
-
-  # Build resources for all namespaces
-  local ALL_RESOURCES=""
-  for NAMESPACE in "${NAMESPACES[@]}"; do
-    local CLUSTERS=$(tsh kube ls --query "$QUERY" -f yaml | KUBE_CLUSTER="$KUBE_CLUSTER" NAMESPACE="$NAMESPACE" yq '.[] | .metadata += {"rqn": "--resource /" + env(TELEPORT_CLUSTER) + "/namespace/" + env(KUBE_CLUSTER) + "/" + env(NAMESPACE) } | .metadata.rqn')
-    local RESOURCES=$(echo $CLUSTERS | tr '\n' ' ')
-    ALL_RESOURCES="${ALL_RESOURCES} ${RESOURCES}"
+  local ALL_RESOURCES=()
+  local ROLES=""
+  local KUBE_CLUSTER CLUSTER NAMESPACE ROLE
+  for KUBE_CLUSTER in "${KUBE_CLUSTERS[@]}"; do
+    CLUSTER=$(_tp_resolve_kube_cluster "$KUBE_CLUSTER" "$TELEPORT_CLUSTER") || return 1
+    ROLE=$(_tp_roles_for_cluster "$KUBE_CLUSTER")
+    if [ -n "$ROLES" ] && [ "$ROLES" != "$ROLE" ]; then
+      echo "Error: cannot mix lab and non-lab clusters in one request (different roles)" >&2
+      return 1
+    fi
+    ROLES="$ROLE"
+    for NAMESPACE in "${NAMESPACES[@]}"; do
+      ALL_RESOURCES+=(--resource "/$TELEPORT_CLUSTER/namespace/$CLUSTER/$NAMESPACE")
+    done
   done
 
-  eval "tsh request create ${ALL_RESOURCES} --roles $TELEPORT_ROLES_CLUSTER --reason \"$@\""
+  _tp_request_create "$dry_run" "$ROLES" "$REASON" "${ALL_RESOURCES[@]}"
 }
 
 # Request access to a cluster
 tp-request-cluster() {
-  if [ -z "$1" ]; then
-    echo "Usage: tp-request-cluster <kube-cluster-name> <reason>"
+  _tp_filter_dryrun "$@"
+  set -- "${_TP_ARGS[@]}"
+  local dry_run=$_TP_DRY_RUN
+
+  if [ -z "$1" ] || [ -z "$2" ]; then
+    echo "Usage: tp-request-cluster [-n|--echo] <kube-cluster-name> <reason>"
     return 1
   fi
 
-  export TELEPORT_CLUSTER=$(_get_current_teleport_cluster)
+  local TELEPORT_CLUSTER
+  TELEPORT_CLUSTER=$(_get_current_teleport_cluster)
 
   local KUBE_CLUSTER=$1
   shift
 
-  local QUERY="labels[\"cks.coreweave.com/cluster\"] == \"$KUBE_CLUSTER\" || labels[\"cluster\"] == \"$KUBE_CLUSTER\""
-  local CLUSTERS=$(tsh kube ls --query "$QUERY" -f yaml | yq '.[] | .metadata += {"rqn": "--resource /" + env(TELEPORT_CLUSTER) + "/kube_cluster/" + .kube_cluster_name } | .metadata.rqn')
-  local RESOURCES=$(echo $CLUSTERS | tr '\n' ' ')
+  local CLUSTER
+  CLUSTER=$(_tp_resolve_kube_cluster "$KUBE_CLUSTER" "$TELEPORT_CLUSTER") || return 1
 
-  eval "tsh request create ${RESOURCES} --roles $TELEPORT_ROLES_CLUSTER --reason \"$@\""
+  _tp_request_create "$dry_run" "$(_tp_roles_for_cluster "$KUBE_CLUSTER")" "$*" \
+    --resource "/$TELEPORT_CLUSTER/kube_cluster/$CLUSTER"
 }
 
 # Request access to a cluster and its nodes
 tp-request-cluster-and-friends() {
-  if [ -z "$1" ]; then
-    echo "Usage: tp-request-cluster-and-friends <kube-cluster-name> <reason>"
+  _tp_filter_dryrun "$@"
+  set -- "${_TP_ARGS[@]}"
+  local dry_run=$_TP_DRY_RUN
+
+  if [ -z "$1" ] || [ -z "$2" ]; then
+    echo "Usage: tp-request-cluster-and-friends [-n|--echo] <kube-cluster-name> <reason>"
     return 1
   fi
 
-  export TELEPORT_CLUSTER=$(_get_current_teleport_cluster)
+  local TELEPORT_CLUSTER
+  TELEPORT_CLUSTER=$(_get_current_teleport_cluster)
 
   local KUBE_CLUSTER=$1
   shift
 
-  NODES=$(tp-search-nodes-in-cluster $KUBE_CLUSTER)
-  CLUSTER=$(tp-search-cluster "$1" | grep -o '/teleport[^ ]*/kube_cluster/[^ ]*' | sed -E 's|^/||; s|/kube_cluster/.*||' | head -n1)
-  local RESOURCES=$(echo $NODES $CLUSTER | tr '\n' ' ')
+  local CLUSTER
+  CLUSTER=$(_tp_resolve_kube_cluster "$KUBE_CLUSTER" "$TELEPORT_CLUSTER") || return 1
 
-  eval "tsh request create ${RESOURCES} --roles $TELEPORT_ROLES_CLUSTER --reason \"$@\""
+  local RESOURCES=(--resource "/$TELEPORT_CLUSTER/kube_cluster/$CLUSTER")
+  local node
+  while IFS= read -r node; do
+    [ -n "$node" ] || continue
+    RESOURCES+=(--resource "/$TELEPORT_CLUSTER/node/$node")
+  done < <(tp-search-nodes-in-cluster "$KUBE_CLUSTER")
+
+  _tp_request_create "$dry_run" "$(_tp_roles_for_cluster "$KUBE_CLUSTER")" "$*" "${RESOURCES[@]}"
 }
 
 # Create SSH access request for nodes
 tp-request-ssh() {
+  _tp_filter_dryrun "$@"
+  set -- "${_TP_ARGS[@]}"
+  local dry_run=$_TP_DRY_RUN
+
   if [ $# -lt 2 ]; then
-    echo "Usage: tp-create-ssh-request \"<reason>\" <node-name> [<node-name> ...]"
+    echo "Usage: tp-request-ssh [-n|--echo] \"<reason>\" <node-name> [<node-name> ...]"
     echo "Note: Put the reason in quotes as the first argument"
     return 1
   fi
@@ -402,7 +571,7 @@ tp-request-ssh() {
   fi
 
   echo "Creating request for $found_nodes nodes with reason: '$reason'"
-  tsh request create "${args[@]}" --roles "$TELEPORT_ROLES_CLUSTER" --reason "$reason"  
+  _tp_request_create "$dry_run" "$TELEPORT_ROLES_CLUSTER" "$reason" "${args[@]}"
 }
 
 # ============================================================================
@@ -561,7 +730,7 @@ dpu-clean() {
   IFS='|' read -r gmac cluster deviceslot serial region <<< "$(_get_node_info "$node_name")"
   cat << EOF
 cwctl ticket dct-action device "$gmac" \
-  -m "Please clean and reseat both the cable and optic in $dpu_port on node: $gmac, deviceslot: $deviceslot, serial: $serial, cluster: $cluster. Please take care with the other port as this node is currently in production. Thanks." \
+  -m "Please clean and reseat both the cable and optic in $dpu_port on node: $gmac, deviceslot: $deviceslot, serial: $serial, cluster: $cluster." \
   -r "$region"
 EOF
 }
@@ -753,4 +922,14 @@ if [ -n "${SILENCE_IDS}" ]; then
         fi
     done
 fi
+}
+
+cloudsmith-versions() {
+  local pkg=${1:?usage: cloudsmith-versions <package>}
+  cloudsmith list packages coreweave/${pkg} -F json \
+    --page-size 50 --page 1 \
+    -q "name:^${pkg}$ format:docker" \
+    | jq -r '[.data[].tags.version? | arrays | .[]] | unique | sort_by(
+        ltrimstr("v") | split("-")[0] | split(".") | map(tonumber? // 0)
+      ) | reverse[]'
 }
